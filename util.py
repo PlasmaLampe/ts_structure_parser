@@ -134,6 +134,6 @@ def extract_return_value(elements):
         'ExtendedOptionData'
         """
         for element in elements:
-            if isinstance(element, Token) and element.type == "ASCIISTR":
-                return element.value
+            if isinstance(element, Tree) and element.data == "return_type":
+                return parse_pretty_tree(element.pretty())
         return ""
