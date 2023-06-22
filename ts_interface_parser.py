@@ -8,43 +8,7 @@ import argparse
 import lark
 
 from lark import Lark, Transformer, Tree
-
-def parse_pretty_tree(tree_str):
-    """
-       Parses a pretty-printed Lark parse tree into a nested dictionary.
-
-       This function processes the pretty-printed tree line by line. For each line,
-       it calculates the indentation level to determine where in the tree structure it is.
-       It then splits the line into a rule name and a value, and adds this to the current
-       dictionary in the stack. The stack list is used to keep track of the current nesting
-       level in the dictionary.
-
-       Parameters:
-       tree_str (str): The string representation of the Lark parse tree.
-
-       Returns:
-       dict: A nested dictionary representation of the parse tree.
-       """
-    lines = tree_str.split('\n')
-    result = {}
-    stack = [result]
-    last_indent = -1
-
-    for line in lines:
-        indent = len(line) - len(line.lstrip())
-        name, _, value = line.strip().partition(' ')
-
-        if indent > last_indent:
-            stack.append({})
-            stack[-2][name] = stack[-1]
-        elif indent < last_indent:
-            stack.pop()
-
-        stack[-1][name] = value
-
-        last_indent = indent
-
-    return result
+from util import extract_function_name, extract_documentation, extract_parameters, extract_return_value, parse_pretty_tree
 
 class TsToJson(Transformer):
     def comment(self, elements):
@@ -74,6 +38,19 @@ class TsToJson(Transformer):
 
     def optional(self, elements):
         return {"optional": True}
+
+    def function_decl(self, elements):
+        return {
+            "function_name": str(extract_function_name(elements)),
+            "description": str(extract_documentation(elements)),
+            "parameters": str(extract_parameters(elements)),
+            "return_value": str(extract_return_value(elements))
+        }
+
+    def balanced_braces(self, elements):
+        # This function processes the body of the function,
+        # capturing everything within the balanced braces as a string
+        return "".join([str(e) for e in elements])
 
     def import_stmt(self, elements):
         # Handle import statements. This is just a simple example.
@@ -174,10 +151,16 @@ class TsToJson(Transformer):
 
 
 tsParser = Lark(r"""
-    start: (import_stmt | int)*
+    start: (import_stmt | function_decl | int)*
 
     int: comment? EXPORT? INTERFACE CNAME extends? "{" typedef* "}"
 
+    function_decl: comment? EXPORT? "function" CNAME "(" params ")" ":" ASCIISTR "{" _function_body "}"
+    params: param ("," param)*
+    param: CNAME (":" (ASCIISTR | array_type))? ["=" ASCIISTR]
+    
+    array_type: ASCIISTR "[]" | array_type "[]"
+    
     typedef : comment? prefix? identifier optional? ":" tstype (";" | ",")? inline_comment?
 
     identifier : CNAME function?
@@ -215,6 +198,11 @@ tsParser = Lark(r"""
     FROM: "from"
 
     ASCIISTR: /[a-zA-Z0-9_.]+/
+    
+    _function_body : balanced_braces
+    
+    balanced_braces: (inner_code | "{" balanced_braces "}")*
+    inner_code: /[^{}]+/
 
     %import common.CNAME
     %import common.WS
@@ -232,8 +220,10 @@ def transform(interface_data, debug=False):
     for cTree in tree.children:
         if debug:
             print(cTree.pretty())
-        transformed = json.dumps(TsToJson().transform(cTree), indent=4, sort_keys=True)
-        out_jsons.append(transformed)
+
+        if isinstance(cTree, Tree):
+            transformed = json.dumps(TsToJson().transform(cTree), indent=4, sort_keys=True)
+            out_jsons.append(transformed)
 
     return out_jsons
 
