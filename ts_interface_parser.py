@@ -7,8 +7,44 @@ import json
 import argparse
 import lark
 
-from lark import Lark, Transformer
+from lark import Lark, Transformer, Tree
 
+def parse_pretty_tree(tree_str):
+    """
+       Parses a pretty-printed Lark parse tree into a nested dictionary.
+
+       This function processes the pretty-printed tree line by line. For each line,
+       it calculates the indentation level to determine where in the tree structure it is.
+       It then splits the line into a rule name and a value, and adds this to the current
+       dictionary in the stack. The stack list is used to keep track of the current nesting
+       level in the dictionary.
+
+       Parameters:
+       tree_str (str): The string representation of the Lark parse tree.
+
+       Returns:
+       dict: A nested dictionary representation of the parse tree.
+       """
+    lines = tree_str.split('\n')
+    result = {}
+    stack = [result]
+    last_indent = -1
+
+    for line in lines:
+        indent = len(line) - len(line.lstrip())
+        name, _, value = line.strip().partition(' ')
+
+        if indent > last_indent:
+            stack.append({})
+            stack[-2][name] = stack[-1]
+        elif indent < last_indent:
+            stack.pop()
+
+        stack[-1][name] = value
+
+        last_indent = indent
+
+    return result
 
 class TsToJson(Transformer):
     def comment(self, elements):
@@ -38,6 +74,11 @@ class TsToJson(Transformer):
 
     def optional(self, elements):
         return {"optional": True}
+
+    def import_stmt(self, elements):
+        # Handle import statements. This is just a simple example.
+        # You will need to modify it based on your specific requirements.
+        return {"import": str(elements[3])}
 
     def function(self, elements):
         params = {}
@@ -123,12 +164,18 @@ class TsToJson(Transformer):
             ret_val[name]["extends"] = extends
 
         for i in range(start_index, len(elements)):
-            ret_val[name].update(elements[i])
+            found_attribute = elements[i]
+            if isinstance(found_attribute, dict):
+                ret_val[name].update(found_attribute)
+            elif isinstance(found_attribute, Tree):
+                ret_val[name].update(parse_pretty_tree(found_attribute.pretty()))
 
         return ret_val
 
 
 tsParser = Lark(r"""
+    start: (import_stmt | int)*
+
     int: comment? EXPORT? INTERFACE CNAME extends? "{" typedef* "}"
 
     typedef : comment? prefix? identifier optional? ":" tstype (";" | ",")? inline_comment?
@@ -150,7 +197,7 @@ tsParser = Lark(r"""
 
     inline_comment: /\/\/.*\n/
 
-    tstype : (CNAME | ESCAPED_STRING | OTHER_ESCAPED_STRINGS | "{" typedef* "}" | conjunction) isarray? ("|" (CNAME | ESCAPED_STRING | OTHER_ESCAPED_STRINGS | "{" typedef* "}" | conjunction )isarray?)*
+    tstype : ASCIISTR isarray? ("|" ASCIISTR isarray?)*
 
     isarray : "[]"
 
@@ -161,6 +208,14 @@ tsParser = Lark(r"""
 
     OTHER_ESCAPED_STRINGS : "'" _STRING_ESC_INNER "'"
 
+    import_stmt: IMPORT (("*" AS CNAME) | ("{" CNAME "}")) FROM ESCAPED_STRING ";"
+    
+    IMPORT: "import"
+    AS: "as"
+    FROM: "from"
+
+    ASCIISTR: /[a-zA-Z0-9_.]+/
+
     %import common.CNAME
     %import common.WS
     %import common.NEWLINE
@@ -168,16 +223,19 @@ tsParser = Lark(r"""
     %import common._STRING_ESC_INNER
     %ignore WS
     %ignore NEWLINE
-    """, start='int')
-
+    """, start='start')
 
 def transform(interface_data, debug=False):
+    out_jsons = []
     tree = tsParser.parse(interface_data)
 
-    if debug:
-        print(tree.pretty())
+    for cTree in tree.children:
+        if debug:
+            print(cTree.pretty())
+        transformed = json.dumps(TsToJson().transform(cTree), indent=4, sort_keys=True)
+        out_jsons.append(transformed)
 
-    return json.dumps(TsToJson().transform(tree), indent=4, sort_keys=True)
+    return out_jsons
 
 
 if __name__ == "__main__":
