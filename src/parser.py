@@ -9,10 +9,10 @@ tsParser = Lark(r"""
     params: param ","? ("," param)*
     param: CNAME (":" tstype)? ["=" ASCIISTR]
 
-    return_type: ":" (ASCIISTR generic_type? | array_type | object_type | generic_type | array_literal)?
+    return_type: ":" (ASCIISTR generic_type? | array_type | union_type | object_type | generic_type | array_literal)*
     generic_type: "<" tstype ("," tstype)* ">"
     tstype: (ASCIISTR | object_type | union_type) (isarray | union_type | array_literal | object_type)?
-    union_type: "|" (ASCIISTR union_type)? isarray?
+    union_type: "|" (ASCIISTR union_type)? isarray? ASCIISTR?
 
     object_type: "{" object_properties "}"
     object_properties: (object_property ((","|";") object_property)* (","|";")*)?
