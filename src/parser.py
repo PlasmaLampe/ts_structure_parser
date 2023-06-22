@@ -1,13 +1,13 @@
 from lark import Lark
 
 tsParser = Lark(r"""
-    start: (import_stmt | function_decl | int | enum | class)*
+    start: (import_stmt | function_decl | int | enum | class_decl)*
 
     int: comment? EXPORT? INTERFACE CNAME extends? "{" typedef* "}"
     
     enum: comment? EXPORT? ENUM CNAME "{" (ASCIISTR "=" ASCIISTR ","?)* "}"
     
-    class: comment? EXPORT? CLASS CNAME "{" class_prop_decl* "}"
+    class_decl: comment? EXPORT? CLASS CNAME "{" class_prop_decl* "}"
     
     class_prop_decl: comment? visibility? STATIC? (method_decl | attribute_decl)*
     method_decl: comment? visibility? ASYNC? CNAME "(" params? ")" return_type? "{" _function_body "}"

@@ -2,7 +2,7 @@ import json
 import lark
 
 from lark import Transformer, Tree, Token
-from src.util import extract_function_name, extract_documentation, extract_parameters, extract_return_value, parse_pretty_tree
+from src.util import extract_function_or_class_name, extract_documentation, extract_parameters, extract_return_value, parse_pretty_tree
 from src.parser import tsParser
 
 class TsToJson(Transformer):
@@ -31,12 +31,21 @@ class TsToJson(Transformer):
         else:
             return {"type": ret_val}
 
+    def class_decl(self, elements):
+        #TODO
+        name = extract_function_or_class_name(elements)
+        description = extract_documentation(elements)
+        return {
+            "name": name,
+            "description": description
+        }
+
     def optional(self, elements):
         return {"optional": True}
 
     def function_decl(self, elements):
         return {
-            "function_name": str(extract_function_name(elements)),
+            "function_name": str(extract_function_or_class_name(elements)),
             "description": str(extract_documentation(elements)),
             "parameters": str(extract_parameters(elements)),
             "return_value": str(extract_return_value(elements))
@@ -74,7 +83,8 @@ class TsToJson(Transformer):
     def CLASS(self, _):
         return "class"
 
-    def visibility(self, _):
+    def visibility(self, elements):
+        #TODO
         return "visibility TODO"
 
     def identifier(self, elements):

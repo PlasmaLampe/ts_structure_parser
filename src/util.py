@@ -38,7 +38,7 @@ def parse_pretty_tree(tree_str):
 
     return result
 
-def extract_function_name(parsed_elements):
+def extract_function_or_class_name(parsed_elements):
     """
     Extracts the name of a TypeScript function from a list of parsed elements.
 
@@ -51,7 +51,7 @@ def extract_function_name(parsed_elements):
 
     Examples:
     >>> parsed_elements = [<Token and Tree instances>]
-    >>> print(extract_function_name(parsed_elements))
+    >>> print(extract_function_or_class_name(parsed_elements))
     'extendOptionDataWithDerivedAttributes'
 
     Note:
