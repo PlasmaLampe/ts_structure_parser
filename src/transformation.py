@@ -1,7 +1,7 @@
 import json
 import lark
 
-from lark import Transformer, Tree
+from lark import Transformer, Tree, Token
 from src.util import extract_function_name, extract_documentation, extract_parameters, extract_return_value, parse_pretty_tree
 from src.parser import tsParser
 
@@ -65,6 +65,18 @@ class TsToJson(Transformer):
     def ASYNC(self, _):
         return "async"
 
+    def STATIC(self, _):
+        return "static"
+
+    def ENUM(self, _):
+        return "enum"
+
+    def CLASS(self, _):
+        return "class"
+
+    def visibility(self, _):
+        return "visibility TODO"
+
     def identifier(self, elements):
         if len(elements) > 0 and type(elements[0]) == dict and "params" in elements[0]:
             return {"name": "anonymous_function", "params": elements[0]["params"]}
@@ -107,6 +119,46 @@ class TsToJson(Transformer):
             raise Exception("Has no name")
 
         return {name: ret_dict}
+
+    def enum(self, elements):
+        elements = [i for i in elements if not str(i) == "export" and not str(i) == "interface"]
+
+        descr = None
+        extends = None
+        start_index = 1
+
+        if type(elements[0]) == dict and "description" in elements[0]:
+            descr = elements[0]["description"]
+            name = str(elements[1])
+            start_index = 2
+        elif type(elements[1]) == lark.tree.Tree and elements[1].data == "extends":
+            name = str(elements[0])
+            extends = [str(i) for i in elements[1].children]
+            start_index = 2
+        else:
+            name = str(elements[0])
+
+        if name is None:
+            raise Exception("Has no name")
+
+        ret_val = {name: {}}
+
+        if descr is not None:
+            ret_val[name]["description"] = descr
+
+        if extends is not None:
+            ret_val[name]["extends"] = extends
+
+        for i in range(start_index, len(elements)):
+            found_attribute = elements[i]
+            if isinstance(found_attribute, dict):
+                ret_val[name].update(found_attribute)
+            elif isinstance(found_attribute, Tree):
+                ret_val[name].update(parse_pretty_tree(found_attribute.pretty()))
+            elif isinstance(found_attribute, Token):
+                ret_val[found_attribute.value] = found_attribute.type
+
+        return ret_val
 
     def int(self, elements):
         elements = [i for i in elements if not str(i) == "export" and not str(i) == "interface"]
