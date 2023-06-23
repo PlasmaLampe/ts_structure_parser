@@ -142,6 +142,11 @@ def extract_return_type(elements):
         for element in elements:
             if isinstance(element, Tree) and element.data == "return_type":
                 children = element.children
+
+                if isinstance(children[0], Tree):
+                    # TODO improve ugly workaround that offers option to handle one level nested types
+                    children = children[0].children
+
                 out_arr = []
 
                 for child in children:

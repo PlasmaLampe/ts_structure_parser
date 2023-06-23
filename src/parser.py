@@ -14,12 +14,12 @@ tsParser = Lark(r"""
     attribute_decl: comment? visibility? CNAME (":" tstype)? "="? ASCIISTR? ("(" ")")? ";"? 
 
     function_decl: comment? EXPORT? ASYNC? "function" CNAME "(" params? ")" return_type? "{" _function_body "}"
-    params: param ","? ("," param)*
+    params: param ("," param)*
     param: CNAME ("?")? (":" tstype)? ["=" ASCIISTROBJ]
 
     return_type: ":" (ASCIISTR generic_type? | array_type | union_type | object_type | generic_type | array_literal)*
     generic_type: "<" tstype ("," tstype)* ">"
-    tstype: (ASCIISTR | object_type | union_type | generic_type) (isarray | union_type | array_literal | object_type | generic_type)?
+    tstype: ASCIISTR? (ASCIISTROBJ | union_type | array_literal | object_type | generic_type)?
     union_type: "|" (ASCIISTR union_type)? isarray? ASCIISTR?
 
     object_type: "{" object_properties "}"
@@ -27,7 +27,7 @@ tsParser = Lark(r"""
     object_property: ASCIISTR ":" tstype
 
     array_type: ASCIISTR "[]" | array_type "[]"
-    array_literal: "[" (ASCIISTR ("," ASCIISTR)*)? "]"
+    array_literal: (ASCIISTROBJ ("," ASCIISTROBJ)*)?
 
     typedef : comment? prefix? identifier optional? ":" tstype (";" | ",")? inline_comment?
 
@@ -74,7 +74,7 @@ tsParser = Lark(r"""
     FROM: "from"
 
     ASCIISTR: /[a-zA-Z0-9_.\"]+/
-    ASCIISTROBJ: /[a-zA-Z0-9_.{}\"]+/
+    ASCIISTROBJ: /[a-zA-Z0-9_.{}\[\]\"]+/
 
     _function_body : balanced_braces
 

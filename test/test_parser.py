@@ -105,12 +105,34 @@ class TestParser(unittest.TestCase):
 
         self.assertEqual(result.get("parameters"), target.get("parameters"))
 
+
+    def test_complex_return_arr_literal(self):
+        idata = """
+            export function someCalc(
+                foo,
+                bar
+            ): [any, number[], number[], number[], number[], number, string, string] {}
+        """
+        target = {
+            "description": "Some text description\n\n",
+            "function_name": "countBusinessDays",
+            "parameters": str({
+                'foo': "",
+                'bar': ""
+            }),
+            "returns": "['[any', 'number[]', 'number[]', 'number[]', 'number[]', 'number', 'string', 'string]']"
+        }
+
+        result = json.loads(transform(idata)[0])
+
+        self.assertEqual(result.get("returns"), target.get("returns"))
+
     def test_readonly_properties(self):
         idata = """
             interface Point {
-				readonly x: number;
-				readonly y: number;
-			}
+                readonly x: number;
+                readonly y: number;
+            }
         """
         target = """{
         "Point": {
