@@ -150,7 +150,10 @@ def extract_return_type(elements):
                 out_arr = []
 
                 for child in children:
-                    out_arr.append(child.value)
+                    try:
+                        out_arr.append(child.value)
+                    except:
+                        out_arr.append("any")
 
                 return out_arr
         return ""

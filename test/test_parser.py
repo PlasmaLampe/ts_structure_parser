@@ -127,6 +127,22 @@ class TestParser(unittest.TestCase):
 
         self.assertEqual(result.get("returns"), target.get("returns"))
 
+    def test_function_default_val(self):
+        idata = """
+            export function calcStuff(options: ExtendedData[], snapshotTime: any, divider: number = 5): void {}
+        """
+        target = {
+            "description": "Some text description\n\n",
+            "function_name": "countBusinessDays",
+            "parameters": "{'options': ['ExtendedData', '[]'], 'snapshotTime': ['any'], 'divider': ['number']}",
+            "returns": "['[any', 'number[]', 'number[]', 'number[]', 'number[]', 'number', 'string', 'string]']"
+        }
+
+        result = json.loads(transform(idata)[0])
+
+        self.assertEqual(result.get("parameters"), target.get("parameters"))
+
+
     def test_readonly_properties(self):
         idata = """
             interface Point {
