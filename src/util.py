@@ -38,6 +38,7 @@ def parse_pretty_tree(tree_str):
 
     return result
 
+
 def extract_function_or_class_name(parsed_elements):
     """
     Extracts the name of a TypeScript function from a list of parsed elements.
@@ -52,26 +53,21 @@ def extract_function_or_class_name(parsed_elements):
     Examples:
     >>> parsed_elements = [<Token and Tree instances>]
     >>> print(extract_function_or_class_name(parsed_elements))
-    'extendOptionDataWithDerivedAttributes'
-
-    Note:
-    This function assumes that the function name always comes after the 'EXPORT' keyword in the list of parsed
-    elements. If this is not the case in your data, the function might not work correctly.
+    'extendDataWithDerivedAttributes'
     """
-    export_found = False
     for element in parsed_elements:
         if isinstance(element, Token):
-            if element.type == 'EXPORT':
-                export_found = True
-            elif export_found and element.type == 'CNAME':
+            if element.type == 'CNAME':
                 return element.value
     return None
+
 
 def extract_param_name(parsed_elements):
     for element in parsed_elements:
         if isinstance(element, Token) and element.type == 'CNAME':
             return element.value
     return None
+
 
 def extract_documentation(elements):
         """
@@ -94,6 +90,7 @@ def extract_documentation(elements):
                 documentation += element["description"] + "\n"
         return documentation
 
+
 def extract_parameters(elements):
         """
         Extracts the parameters from a list of parsed elements.
@@ -109,16 +106,25 @@ def extract_parameters(elements):
         >>> print(extract_parameters(parsed_elements))
         {'optionData': 'OptionData'}
         """
+
+        def extract_type(element):
+            for child in element.children:
+                if isinstance(child, dict):
+                    has_type = child.get("type")
+                    if has_type:
+                        return child["type"]
+
         parameters = {}
         for element in elements:
             if isinstance(element, Tree) and element.data == "params":
                 for param_tree in element.children:
                     if isinstance(param_tree, Tree) and param_tree.data == "param":
                         name = extract_param_name(param_tree.children)
-                        parameters[name] = parse_pretty_tree(param_tree.pretty())
+                        parameters[name] = extract_type(param_tree)
         return parameters
 
-def extract_return_value(elements):
+
+def extract_return_type(elements):
         """
         Extracts the return value from a list of parsed elements.
 
@@ -130,10 +136,16 @@ def extract_return_value(elements):
 
         Example:
         >>> parsed_elements = [<Token and Tree instances>]
-        >>> print(extract_return_value(parsed_elements))
+        >>> print(extract_return_type(parsed_elements))
         'ExtendedOptionData'
         """
         for element in elements:
             if isinstance(element, Tree) and element.data == "return_type":
-                return parse_pretty_tree(element.pretty())
+                children = element.children
+                out_arr = []
+
+                for child in children:
+                    out_arr.append(child.value)
+
+                return out_arr
         return ""

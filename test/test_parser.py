@@ -1,3 +1,4 @@
+import json
 import unittest
 import re
 from ts_interface_parser import transform
@@ -50,6 +51,59 @@ class TestParser(unittest.TestCase):
     }
 }"""
         self.assertEqual(transform(idata)[0], target)
+
+    def test_inheritance(self):
+        idata = """
+            interface SquareConfig extends GeometryConfig {
+                color?: string;
+                width?: number;
+            }
+        """
+        target = """{
+    "SquareConfig": {
+        "color": {
+            "optional": true,
+            "type": [
+                "string"
+            ]
+        },
+        "extends": [
+            "GeometryConfig"
+        ],
+        "width": {
+            "optional": true,
+            "type": [
+                "number"
+            ]
+        }
+    }
+}"""
+        self.assertEqual(transform(idata)[0], target)
+
+    def test_simple_function_header(self):
+        idata = """
+            function countBusinessDays(startDateString: string, endDateString: string): number {
+                const startDate = moment(startDateString.substring(0, 10), "YYYY-MM-DD");
+                const endDate = moment(endDateString.substring(0, 10), "YYYY-MM-DD");
+            
+                // do some calculations
+            
+                return count;
+            }
+        """
+        target = {
+            "description": "",
+            "function_name": "countBusinessDays",
+            "parameters": str({
+                'startDateString': ['string'],
+                'endDateString': ['string']
+            }),
+            "return_value": "['number']"
+        }
+
+        result = json.loads(transform(idata)[0])
+
+        self.assertEqual(result.get("parameters"), target.get("parameters"))
 
     def test_readonly_properties(self):
         idata = """

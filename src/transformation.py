@@ -2,7 +2,7 @@ import json
 import lark
 
 from lark import Transformer, Tree, Token
-from src.util import extract_function_or_class_name, extract_documentation, extract_parameters, extract_return_value, parse_pretty_tree
+from src.util import extract_function_or_class_name, extract_documentation, extract_parameters, extract_return_type, parse_pretty_tree
 from src.parser import tsParser
 
 class TsToJson(Transformer):
@@ -48,7 +48,7 @@ class TsToJson(Transformer):
             "function_name": str(extract_function_or_class_name(elements)),
             "description": str(extract_documentation(elements)),
             "parameters": str(extract_parameters(elements)),
-            "return_value": str(extract_return_value(elements))
+            "returns": str(extract_return_type(elements))
         }
 
     def balanced_braces(self, elements):
