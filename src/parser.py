@@ -1,12 +1,13 @@
 from lark import Lark
 
 tsParser = Lark(r"""
-    start: (import_stmt | function_decl | int | enum | class_decl)*
+    start: (import_stmt | function_decl | int | enum | ns_decl | class_decl)*
 
     int: comment? EXPORT? INTERFACE CNAME extends? "{" typedef* "}"
     
     enum: comment? EXPORT? ENUM CNAME "{" (ASCIISTR "=" ASCIISTR ","?)* "}"
     
+    ns_decl: comment? EXPORT? NS CNAME "{" (function_decl | int | enum | class_decl)* "}"
     class_decl: comment? EXPORT? CLASS CNAME "{" class_prop_decl* "}"
     
     class_prop_decl: comment? visibility? STATIC? (method_decl | attribute_decl)*
@@ -57,6 +58,7 @@ tsParser = Lark(r"""
     conjunction : "(" CNAME ( "&" CNAME)* ")"
 
     CLASS: "class"
+    NS: "namespace"
     ENUM: "enum"
     INTERFACE: "interface"
     EXPORT: "export"

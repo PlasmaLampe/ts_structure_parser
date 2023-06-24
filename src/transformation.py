@@ -9,6 +9,21 @@ class TsToJson(Transformer):
     def comment(self, elements):
         return {"description": str("\n".join([x.strip() for x in elements[0].replace("*", "").replace("/", "").split("\n") if x != ""]))}
 
+    def ns_decl(self, elements):
+        name = str(extract_function_or_class_name(elements))
+
+        content_of_namespace = []
+
+        for element in elements:
+            if isinstance(element, dict):
+                content_of_namespace.append(element)
+
+        return {
+            "type": "namespace",
+            "name": name,
+            "content": content_of_namespace
+        }
+
     def tstype(self, elements):
         ret_val = []
         ret_dict = {}

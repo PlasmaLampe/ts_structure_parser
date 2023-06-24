@@ -105,6 +105,54 @@ class TestParser(unittest.TestCase):
 
         self.assertEqual(result.get("parameters"), target.get("parameters"))
 
+    def test_simple_namespace_function_header(self):
+        idata = """
+            /**
+             *  This is a namespace test
+             */
+            export namespace ns {
+                export interface ITest {
+                    x: number;
+                }
+
+                function countBusinessDays(startDateString: string, endDateString: string): number {
+                    const startDate = moment(startDateString.substring(0, 10), "YYYY-MM-DD");
+                    const endDate = moment(endDateString.substring(0, 10), "YYYY-MM-DD");
+    
+                    // do some calculations
+    
+                    return count;
+                }
+            }
+        """
+        target = {
+            "type": "namespace",
+            "name": "ns",
+            "content": str([
+                {
+                    'description': 'This is a namespace test\n'
+                },
+                {
+                    'ITest': {
+                        'x': {'type': ['number']}
+                    }
+                },
+                {
+                    "description": "",
+                    "function_name": "countBusinessDays",
+                    "parameters": str({
+                        'startDateString': ['string'],
+                        'endDateString': ['string']
+                    }),
+                    "return_value": "['number']"
+                }
+            ])
+        }
+
+        result = json.loads(transform(idata)[0])
+
+        self.assertEqual(result.get("parameters"), target.get("parameters"))
+
 
     def test_complex_return_arr_literal(self):
         idata = """
