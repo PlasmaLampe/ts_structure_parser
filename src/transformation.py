@@ -47,12 +47,26 @@ class TsToJson(Transformer):
             return {"type": ret_val}
 
     def class_decl(self, elements):
-        #TODO
         name = extract_function_or_class_name(elements)
         description = extract_documentation(elements)
+        content = []
+
+        for element in elements:
+            if isinstance(element, Tree):
+                content.append(element.children)
+
+        methods = []
+        for e in content[0]:
+            if isinstance(e, Tree) and e.data == "method_decl":
+                methods.append(self.method_decl(e)) # FIXME create method_decl
+
+        full_content = methods  # TODO append more
+
         return {
+            type: "class",
             "name": name,
-            "description": description
+            "description": description,
+            content: full_content
         }
 
     def optional(self, elements):

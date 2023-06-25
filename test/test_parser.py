@@ -151,8 +151,69 @@ class TestParser(unittest.TestCase):
 
         result = json.loads(transform(idata)[0])
 
-        self.assertEqual(result.get("parameters"), target.get("parameters"))
+        self.assertEqual(result.get("parameters"), target.get("parameters")) # FIXME
 
+    def test_simple_class(self):
+        idata = """
+            /**
+             *  This is a class test
+             */
+            export class TestService {
+            
+                /*
+                *  This is a comment
+                */
+                public static countBusinessDays(startDateString: string, endDateString: string): number {
+                    const startDate = moment(startDateString.substring(0, 10), "YYYY-MM-DD");
+                    const endDate = moment(endDateString.substring(0, 10), "YYYY-MM-DD");
+
+                    // do some calculations
+
+                    return count;
+                }
+                
+                
+                /*
+                *  This is a another comment
+                */
+                public static countBusinessDaysOrSomethingElse(startDateString: string, endDateString: string): number {
+                    const startDate = moment(startDateString.substring(0, 10), "YYYY-MM-DD");
+                    const endDate = moment(endDateString.substring(0, 10), "YYYY-MM-DD");
+
+                    // do some calculations
+
+                    return count;
+                }
+
+            }
+        """
+        target = {
+            "type": "namespace",
+            "name": "ns",
+            "content": str([
+                {
+                    'description': 'This is a namespace test\n'
+                },
+                {
+                    'ITest': {
+                        'x': {'type': ['number']}
+                    }
+                },
+                {
+                    "description": "",
+                    "function_name": "countBusinessDays",
+                    "parameters": str({
+                        'startDateString': ['string'],
+                        'endDateString': ['string']
+                    }),
+                    "return_value": "['number']"
+                }
+            ])
+        }
+
+        result = json.loads(transform(idata)[0])
+
+        self.assertEqual(result.get("parameters"), target.get("parameters")) # FIXME
 
     def test_complex_return_arr_literal(self):
         idata = """
