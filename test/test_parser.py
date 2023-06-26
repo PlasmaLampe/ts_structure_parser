@@ -144,14 +144,17 @@ class TestParser(unittest.TestCase):
                         'startDateString': ['string'],
                         'endDateString': ['string']
                     }),
-                    "return_value": "['number']"
+                    "returns": "['number']"
                 }
             ])
         }
 
         result = json.loads(transform(idata)[0])
 
-        self.assertEqual(result.get("parameters"), target.get("parameters")) # FIXME
+        calc_str_content = str(result.get("content"))
+        target_str_content = target.get("content")
+
+        self.assertEqual(calc_str_content, target_str_content)
 
     def test_simple_class(self):
         idata = """
